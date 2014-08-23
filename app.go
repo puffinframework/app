@@ -31,18 +31,35 @@ func (self *Aggregate) CreateApp(appId string) error {
 		if err != nil {
 			return err
 		}
-
-		v := b.Get([]byte(appId))
-		if v != nil {
-			return fmt.Errorf("ID already exists")
+		event, err := createApp(b, appId)
+		if err != nil {
+			return err
 		}
-
-		event := CreatedAppEvent{AppId: appId}
-		return self.onCreatedAppEvent(b, event)
+		return onCreatedAppEvent(b, event)
 	})
 }
 
-func (self *Aggregate) onCreatedAppEvent(b *bolt.Bucket, event CreatedAppEvent) error {
+func (self *Aggregate) OnCreatedApp(event CreatedAppEvent) error {
+	return self.db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte(appsBucketName))
+		if err != nil {
+			return err
+		}
+		return onCreatedAppEvent(b, event)
+	})
+}
+
+func createApp(b *bolt.Bucket, appId string) (event CreatedAppEvent, err error) {
+	v := b.Get([]byte(appId))
+	if v != nil {
+		err = fmt.Errorf("ID already exists")
+		return
+	}
+	event = CreatedAppEvent{AppId: appId}
+	return
+}
+
+func onCreatedAppEvent(b *bolt.Bucket, event CreatedAppEvent) error {
 	return b.Put([]byte(event.AppId), []byte{1})
 }
 
@@ -52,12 +69,29 @@ func (self *Aggregate) RemoveApp(appId string) error {
 		if err != nil {
 			return err
 		}
-
-		event := RemovedAppEvent{AppId: appId}
-		return self.onRemovedAppEvent(b, event)
+		event, err := removeApp(b, appId)
+		if err != nil {
+			return err
+		}
+		return onRemovedAppEvent(b, event)
 	})
 }
 
-func (self *Aggregate) onRemovedAppEvent(b *bolt.Bucket, event RemovedAppEvent) error {
+func (self *Aggregate) OnRemovedApp(event RemovedAppEvent) error {
+	return self.db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte(appsBucketName))
+		if err != nil {
+			return err
+		}
+		return onRemovedAppEvent(b, event)
+	})
+}
+
+func removeApp(b *bolt.Bucket, appId string) (event RemovedAppEvent, err error) {
+	event = RemovedAppEvent{AppId: appId}
+	return
+}
+
+func onRemovedAppEvent(b *bolt.Bucket, event RemovedAppEvent) error {
 	return b.Delete([]byte(event.AppId))
 }
