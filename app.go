@@ -2,26 +2,16 @@ package app
 
 import (
 	"fmt"
-    "os"
 	"github.com/boltdb/bolt"
 )
 
 type Domain struct {
-    db *bolt.DB
+	db  *bolt.DB
 	ids map[string]bool
 }
 
-func NewDomain() *Domain {
-	db, err := bolt.Open("app.db", 0600, nil)
-	if err != nil {
-		panic(err)
-	}
-    return &Domain{ db: db, ids: make(map[string]bool)}
-}
-
-func (self *Domain) Close() {
-    self.db.Close()
-    os.Remove("app.db") // TODO
+func NewDomain(db *bolt.DB) *Domain {
+	return &Domain{db: db, ids: make(map[string]bool)}
 }
 
 type CreatedAppEvent struct {
