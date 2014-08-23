@@ -14,14 +14,26 @@ func TestCreate(t *testing.T) {
 
 	agg := app.NewAggregate(db)
 
-	err := agg.CreateApp("app1")
+	exists1, err := agg.ExistsApp("app1")
 	assert.Nil(t, err)
+	assert.False(t, exists1)
+
+	err = agg.CreateApp("app1")
+	assert.Nil(t, err)
+
+	exists1, err = agg.ExistsApp("app1")
+	assert.Nil(t, err)
+	assert.True(t, exists1)
 
 	err = agg.CreateApp("app1")
 	assert.NotNil(t, err)
 
 	err = agg.CreateApp("app2")
 	assert.Nil(t, err)
+
+	exists2, err := agg.ExistsApp("app2")
+	assert.Nil(t, err)
+	assert.True(t, exists2)
 }
 
 func TestRemove(t *testing.T) {
@@ -33,11 +45,86 @@ func TestRemove(t *testing.T) {
 	err := agg.RemoveApp("app1")
 	assert.Nil(t, err)
 
+	exists1, err := agg.ExistsApp("app1")
+	assert.Nil(t, err)
+	assert.False(t, exists1)
+
 	err = agg.CreateApp("app1")
 	assert.Nil(t, err)
 
 	err = agg.RemoveApp("app1")
 	assert.Nil(t, err)
+}
+
+func TestProcessEvents(t *testing.T) {
+	db := openBoltDB()
+	defer closeBoltDB(db)
+
+	agg := app.NewAggregate(db)
+
+	exists1, err := agg.ExistsApp("app1")
+	assert.Nil(t, err)
+	assert.False(t, exists1)
+
+	err = agg.OnCreatedApp(app.CreatedAppEvent{AppId: "app1"})
+	assert.Nil(t, err)
+
+	exists1, err = agg.ExistsApp("app1")
+	assert.Nil(t, err)
+	assert.True(t, exists1)
+
+	err = agg.OnCreatedApp(app.CreatedAppEvent{AppId: "app1"})
+	assert.Nil(t, err)
+
+	err = agg.OnCreatedApp(app.CreatedAppEvent{AppId: "app2"})
+	assert.Nil(t, err)
+
+	exists2, err := agg.ExistsApp("app2")
+	assert.Nil(t, err)
+	assert.True(t, exists2)
+
+	err = agg.OnRemovedApp(app.RemovedAppEvent{AppId: "app1"})
+	assert.Nil(t, err)
+
+	exists1, err = agg.ExistsApp("app1")
+	assert.Nil(t, err)
+	assert.False(t, exists1)
+}
+
+func TestMix(t *testing.T) {
+	db := openBoltDB()
+	defer closeBoltDB(db)
+
+	agg := app.NewAggregate(db)
+
+	exists1, err := agg.ExistsApp("app1")
+	assert.Nil(t, err)
+	assert.False(t, exists1)
+
+	exists2, err := agg.ExistsApp("app2")
+	assert.Nil(t, err)
+	assert.False(t, exists2)
+
+	err = agg.CreateApp("app1")
+	assert.Nil(t, err)
+
+	exists1, err = agg.ExistsApp("app1")
+	assert.Nil(t, err)
+	assert.True(t, exists1)
+
+	err = agg.OnCreatedApp(app.CreatedAppEvent{AppId: "app2"})
+	assert.Nil(t, err)
+
+	exists2, err = agg.ExistsApp("app2")
+	assert.Nil(t, err)
+	assert.True(t, exists2)
+
+	err = agg.RemoveApp("app2")
+	assert.Nil(t, err)
+
+	exists2, err = agg.ExistsApp("app2")
+	assert.Nil(t, err)
+	assert.False(t, exists2)
 }
 
 func openBoltDB() *bolt.DB {

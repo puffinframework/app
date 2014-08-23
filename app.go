@@ -18,19 +18,16 @@ type RemovedAppEvent struct {
 }
 
 func NewAggregate(db *bolt.DB) *Aggregate {
+	db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte("PuffinApps"))
+		return err
+	})
 	return &Aggregate{db: db}
 }
 
-const (
-	appsBucketName = "PuffinApps"
-)
-
 func (self *Aggregate) CreateApp(appId string) error {
 	return self.db.Update(func(tx *bolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists([]byte(appsBucketName))
-		if err != nil {
-			return err
-		}
+		b := tx.Bucket([]byte("PuffinApps"))
 		event, err := createApp(b, appId)
 		if err != nil {
 			return err
@@ -41,17 +38,13 @@ func (self *Aggregate) CreateApp(appId string) error {
 
 func (self *Aggregate) OnCreatedApp(event CreatedAppEvent) error {
 	return self.db.Update(func(tx *bolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists([]byte(appsBucketName))
-		if err != nil {
-			return err
-		}
+		b := tx.Bucket([]byte("PuffinApps"))
 		return onCreatedAppEvent(b, event)
 	})
 }
 
 func createApp(b *bolt.Bucket, appId string) (event CreatedAppEvent, err error) {
-	v := b.Get([]byte(appId))
-	if v != nil {
+	if existsApp(b, appId) {
 		err = fmt.Errorf("ID already exists")
 		return
 	}
@@ -65,10 +58,7 @@ func onCreatedAppEvent(b *bolt.Bucket, event CreatedAppEvent) error {
 
 func (self *Aggregate) RemoveApp(appId string) error {
 	return self.db.Update(func(tx *bolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists([]byte(appsBucketName))
-		if err != nil {
-			return err
-		}
+		b := tx.Bucket([]byte("PuffinApps"))
 		event, err := removeApp(b, appId)
 		if err != nil {
 			return err
@@ -79,10 +69,7 @@ func (self *Aggregate) RemoveApp(appId string) error {
 
 func (self *Aggregate) OnRemovedApp(event RemovedAppEvent) error {
 	return self.db.Update(func(tx *bolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists([]byte(appsBucketName))
-		if err != nil {
-			return err
-		}
+		b := tx.Bucket([]byte("PuffinApps"))
 		return onRemovedAppEvent(b, event)
 	})
 }
@@ -94,4 +81,20 @@ func removeApp(b *bolt.Bucket, appId string) (event RemovedAppEvent, err error) 
 
 func onRemovedAppEvent(b *bolt.Bucket, event RemovedAppEvent) error {
 	return b.Delete([]byte(event.AppId))
+}
+func (self *Aggregate) ExistsApp(appId string) (exists bool, err error) {
+	err = self.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("PuffinApps"))
+		exists = existsApp(b, appId)
+		return nil
+	})
+	return
+}
+
+func existsApp(b *bolt.Bucket, appId string) bool {
+	v := b.Get([]byte(appId))
+	if v != nil {
+		return true
+	}
+	return false
 }
