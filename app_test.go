@@ -12,15 +12,15 @@ func TestCreate(t *testing.T) {
 	db := openBoltDB()
 	defer closeBoltDB(db)
 
-	domain := app.NewDomain(db)
+	agg := app.NewAggregate(db)
 
-	err := domain.Create("app1")
+	err := agg.CreateApp("app1")
 	assert.Nil(t, err)
 
-	err = domain.Create("app1")
+	err = agg.CreateApp("app1")
 	assert.NotNil(t, err)
 
-	err = domain.Create("app2")
+	err = agg.CreateApp("app2")
 	assert.Nil(t, err)
 }
 
@@ -28,15 +28,15 @@ func TestRemove(t *testing.T) {
 	db := openBoltDB()
 	defer closeBoltDB(db)
 
-	domain := app.NewDomain(db)
+	agg := app.NewAggregate(db)
 
-	err := domain.Remove("app1")
-	assert.NotNil(t, err)
-
-	err = domain.Create("app1")
+	err := agg.RemoveApp("app1")
 	assert.Nil(t, err)
 
-	err = domain.Remove("app1")
+	err = agg.CreateApp("app1")
+	assert.Nil(t, err)
+
+	err = agg.RemoveApp("app1")
 	assert.Nil(t, err)
 }
 

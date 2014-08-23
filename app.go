@@ -5,45 +5,59 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-type Domain struct {
-	db  *bolt.DB
-	ids map[string]bool
-}
-
-func NewDomain(db *bolt.DB) *Domain {
-	return &Domain{db: db, ids: make(map[string]bool)}
+type Aggregate struct {
+	db *bolt.DB
 }
 
 type CreatedAppEvent struct {
-	Id string
-}
-
-func (self *Domain) Create(id string) error {
-	if self.ids[id] {
-		return fmt.Errorf("ID already exists")
-	}
-	event := CreatedAppEvent{Id: id}
-	self.OnCreatedAppEvent(event)
-	return nil
-}
-
-func (self *Domain) OnCreatedAppEvent(event CreatedAppEvent) {
-	self.ids[event.Id] = true
+	AppId string
 }
 
 type RemovedAppEvent struct {
-	Id string
+	AppId string
 }
 
-func (self *Domain) Remove(id string) error {
-	if self.ids[id] != true {
-		return fmt.Errorf("ID does not exist")
-	}
-	event := RemovedAppEvent{Id: id}
-	self.OnRemovedAppEvent(event)
-	return nil
+func NewAggregate(db *bolt.DB) *Aggregate {
+	return &Aggregate{db: db}
 }
 
-func (self *Domain) OnRemovedAppEvent(event RemovedAppEvent) {
-	delete(self.ids, event.Id)
+const (
+	appsBucketName = "PuffinApps"
+)
+
+func (self *Aggregate) CreateApp(appId string) error {
+	return self.db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte(appsBucketName))
+		if err != nil {
+			return err
+		}
+
+		v := b.Get([]byte(appId))
+		if v != nil {
+			return fmt.Errorf("ID already exists")
+		}
+
+		event := CreatedAppEvent{AppId: appId}
+		return self.onCreatedAppEvent(b, event)
+	})
+}
+
+func (self *Aggregate) onCreatedAppEvent(b *bolt.Bucket, event CreatedAppEvent) error {
+	return b.Put([]byte(event.AppId), []byte{1})
+}
+
+func (self *Aggregate) RemoveApp(appId string) error {
+	return self.db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte(appsBucketName))
+		if err != nil {
+			return err
+		}
+
+		event := RemovedAppEvent{AppId: appId}
+		return self.onRemovedAppEvent(b, event)
+	})
+}
+
+func (self *Aggregate) onRemovedAppEvent(b *bolt.Bucket, event RemovedAppEvent) error {
+	return b.Delete([]byte(event.AppId))
 }
