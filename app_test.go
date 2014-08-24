@@ -43,7 +43,7 @@ func TestRemove(t *testing.T) {
 	agg := app.NewAggregate(db)
 
 	err := agg.RemoveApp("app1")
-	assert.Nil(t, err)
+	assert.NotNil(t, err)
 
 	exists1, err := agg.ExistsApp("app1")
 	assert.Nil(t, err)

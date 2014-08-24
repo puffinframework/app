@@ -79,6 +79,10 @@ func (self *Aggregate) OnRemovedApp(event RemovedAppEvent) error {
 }
 
 func removeApp(b *bolt.Bucket, appId string) (event RemovedAppEvent, err error) {
+	if !existsApp(b, appId) {
+		err = fmt.Errorf("ID does not exist")
+		return
+	}
 	event = RemovedAppEvent{AppId: appId}
 	return
 }
