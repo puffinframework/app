@@ -19,7 +19,8 @@ func TestCreate(t *testing.T) {
 	assert.False(t, exists1)
 
 	createdAppEvent, err := agg.CreateApp("app1")
-	assert.Equal(t, app.CreatedAppEvent{AppId: "app1"}, createdAppEvent)
+	assert.Equal(t, app.CreatedAppEvent, createdAppEvent.Header().Type)
+	assert.Equal(t, "app1", createdAppEvent.Data())
 	assert.Nil(t, err)
 
 	exists1, err = agg.ExistsApp("app1")
@@ -30,7 +31,8 @@ func TestCreate(t *testing.T) {
 	assert.NotNil(t, err)
 
 	createdAppEvent, err = agg.CreateApp("app2")
-	assert.Equal(t, app.CreatedAppEvent{AppId: "app2"}, createdAppEvent)
+	assert.Equal(t, app.CreatedAppEvent, createdAppEvent.Header().Type)
+	assert.Equal(t, "app2", createdAppEvent.Data())
 	assert.Nil(t, err)
 
 	exists2, err := agg.ExistsApp("app2")
@@ -52,11 +54,13 @@ func TestRemove(t *testing.T) {
 	assert.False(t, exists1)
 
 	createdAppEvent, err := agg.CreateApp("app1")
-	assert.Equal(t, app.CreatedAppEvent{AppId: "app1"}, createdAppEvent)
+	assert.Equal(t, app.CreatedAppEvent, createdAppEvent.Header().Type)
+	assert.Equal(t, "app1", createdAppEvent.Data())
 	assert.Nil(t, err)
 
 	removedAppEvent, err := agg.RemoveApp("app1")
-	assert.Equal(t, app.RemovedAppEvent{AppId: "app1"}, removedAppEvent)
+	assert.Equal(t, app.RemovedAppEvent, removedAppEvent.Header().Type)
+	assert.Equal(t, "app1", removedAppEvent.Data())
 	assert.Nil(t, err)
 }
 
@@ -70,24 +74,24 @@ func TestProcessEvents(t *testing.T) {
 	assert.Nil(t, err)
 	assert.False(t, exists1)
 
-	err = agg.OnCreatedApp(app.CreatedAppEvent{AppId: "app1"})
+	err = agg.OnCreatedApp(app.NewCreatedAppEvent("app1"))
 	assert.Nil(t, err)
 
 	exists1, err = agg.ExistsApp("app1")
 	assert.Nil(t, err)
 	assert.True(t, exists1)
 
-	err = agg.OnCreatedApp(app.CreatedAppEvent{AppId: "app1"})
+	err = agg.OnCreatedApp(app.NewCreatedAppEvent("app1"))
 	assert.Nil(t, err)
 
-	err = agg.OnCreatedApp(app.CreatedAppEvent{AppId: "app2"})
+	err = agg.OnCreatedApp(app.NewCreatedAppEvent("app2"))
 	assert.Nil(t, err)
 
 	exists2, err := agg.ExistsApp("app2")
 	assert.Nil(t, err)
 	assert.True(t, exists2)
 
-	err = agg.OnRemovedApp(app.RemovedAppEvent{AppId: "app1"})
+	err = agg.OnRemovedApp(app.NewCreatedAppEvent("app1"))
 	assert.Nil(t, err)
 
 	exists1, err = agg.ExistsApp("app1")
@@ -110,14 +114,15 @@ func TestMix(t *testing.T) {
 	assert.False(t, exists2)
 
 	createdAppEvent, err := agg.CreateApp("app1")
-	assert.Equal(t, app.CreatedAppEvent{AppId: "app1"}, createdAppEvent)
+	assert.Equal(t, app.CreatedAppEvent, createdAppEvent.Header().Type)
+	assert.Equal(t, "app1", createdAppEvent.Data())
 	assert.Nil(t, err)
 
 	exists1, err = agg.ExistsApp("app1")
 	assert.Nil(t, err)
 	assert.True(t, exists1)
 
-	err = agg.OnCreatedApp(app.CreatedAppEvent{AppId: "app2"})
+	err = agg.OnCreatedApp(app.NewCreatedAppEvent("app2"))
 	assert.Nil(t, err)
 
 	exists2, err = agg.ExistsApp("app2")
@@ -125,7 +130,8 @@ func TestMix(t *testing.T) {
 	assert.True(t, exists2)
 
 	removedAppEvent, err := agg.RemoveApp("app2")
-	assert.Equal(t, app.RemovedAppEvent{AppId: "app2"}, removedAppEvent)
+	assert.Equal(t, app.RemovedAppEvent, removedAppEvent.Header().Type)
+	assert.Equal(t, "app2", removedAppEvent.Data())
 	assert.Nil(t, err)
 
 	exists2, err = agg.ExistsApp("app2")
