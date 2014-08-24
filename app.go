@@ -61,15 +61,16 @@ func onCreatedAppEvent(b *bolt.Bucket, event CreatedAppEvent) error {
 	return b.Put([]byte(event.AppId), []byte{1})
 }
 
-func (self *Aggregate) RemoveApp(appId string) error {
-	return self.db.Update(func(tx *bolt.Tx) error {
+func (self *Aggregate) RemoveApp(appId string) (event RemovedAppEvent, err error) {
+	self.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(appsBucketName))
-		event, err := removeApp(b, appId)
+		event, err = removeApp(b, appId)
 		if err != nil {
 			return err
 		}
 		return onRemovedAppEvent(b, event)
 	})
+	return
 }
 
 func (self *Aggregate) OnRemovedApp(event RemovedAppEvent) error {
