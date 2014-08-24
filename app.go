@@ -5,6 +5,10 @@ import (
 	"github.com/boltdb/bolt"
 )
 
+const (
+	appsBucketName string = "PuffinApps"
+)
+
 type Aggregate struct {
 	db *bolt.DB
 }
@@ -19,7 +23,7 @@ type RemovedAppEvent struct {
 
 func NewAggregate(db *bolt.DB) *Aggregate {
 	db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte("PuffinApps"))
+		_, err := tx.CreateBucketIfNotExists([]byte(appsBucketName))
 		return err
 	})
 	return &Aggregate{db: db}
@@ -27,7 +31,7 @@ func NewAggregate(db *bolt.DB) *Aggregate {
 
 func (self *Aggregate) CreateApp(appId string) error {
 	return self.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("PuffinApps"))
+		b := tx.Bucket([]byte(appsBucketName))
 		event, err := createApp(b, appId)
 		if err != nil {
 			return err
@@ -38,7 +42,7 @@ func (self *Aggregate) CreateApp(appId string) error {
 
 func (self *Aggregate) OnCreatedApp(event CreatedAppEvent) error {
 	return self.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("PuffinApps"))
+		b := tx.Bucket([]byte(appsBucketName))
 		return onCreatedAppEvent(b, event)
 	})
 }
@@ -58,7 +62,7 @@ func onCreatedAppEvent(b *bolt.Bucket, event CreatedAppEvent) error {
 
 func (self *Aggregate) RemoveApp(appId string) error {
 	return self.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("PuffinApps"))
+		b := tx.Bucket([]byte(appsBucketName))
 		event, err := removeApp(b, appId)
 		if err != nil {
 			return err
@@ -69,7 +73,7 @@ func (self *Aggregate) RemoveApp(appId string) error {
 
 func (self *Aggregate) OnRemovedApp(event RemovedAppEvent) error {
 	return self.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("PuffinApps"))
+		b := tx.Bucket([]byte(appsBucketName))
 		return onRemovedAppEvent(b, event)
 	})
 }
@@ -84,7 +88,7 @@ func onRemovedAppEvent(b *bolt.Bucket, event RemovedAppEvent) error {
 }
 func (self *Aggregate) ExistsApp(appId string) (exists bool, err error) {
 	err = self.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("PuffinApps"))
+		b := tx.Bucket([]byte(appsBucketName))
 		exists = existsApp(b, appId)
 		return nil
 	})
