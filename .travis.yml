@@ -1,2 +1,10 @@
 language: go
-script: go get -t && go test ./...
+
+install:
+    - go get code.google.com/p/go.tools/cmd/cover
+    - go get github.com/mattn/goveralls
+    - go get -t
+
+script:
+    - go test ./... -covermode=count -coverprofile=coverage.out
+    - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken NeunxqCqAzY4C97D5g7B84lBZyzxUNGHm
