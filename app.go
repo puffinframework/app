@@ -29,15 +29,16 @@ func NewAggregate(db *bolt.DB) *Aggregate {
 	return &Aggregate{db: db}
 }
 
-func (self *Aggregate) CreateApp(appId string) error {
-	return self.db.Update(func(tx *bolt.Tx) error {
+func (self *Aggregate) CreateApp(appId string) (event CreatedAppEvent, err error) {
+	self.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(appsBucketName))
-		event, err := createApp(b, appId)
+		event, err = createApp(b, appId)
 		if err != nil {
 			return err
 		}
 		return onCreatedAppEvent(b, event)
 	})
+	return
 }
 
 func (self *Aggregate) OnCreatedApp(event CreatedAppEvent) error {
