@@ -33,7 +33,7 @@ func NewAggregate(db *bolt.DB) *Aggregate {
 }
 
 func (self *Aggregate) CreateApp(appId string) (evt event.Event, err error) {
-	self.db.Update(func(tx *bolt.Tx) error {
+	err = self.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(appsBucketName))
 		evt, err = createApp(b, appId)
 		if err != nil {
@@ -66,7 +66,7 @@ func onCreatedAppEvent(b *bolt.Bucket, evt event.Event) error {
 }
 
 func (self *Aggregate) RemoveApp(appId string) (evt event.Event, err error) {
-	self.db.Update(func(tx *bolt.Tx) error {
+	err = self.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(appsBucketName))
 		evt, err = removeApp(b, appId)
 		if err != nil {
