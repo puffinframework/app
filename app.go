@@ -12,19 +12,19 @@ const (
 	RemovedAppEvent event.Type = "RemovedAppEvent"
 )
 
-type Aggregate struct {
+type App struct {
 	db *bolt.DB
 }
 
-func NewAggregate(db *bolt.DB) *Aggregate {
+func NewApp(db *bolt.DB) *App {
 	db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte(appsBucketName))
 		return err
 	})
-	return &Aggregate{db: db}
+	return &App{db: db}
 }
 
-func (self *Aggregate) CreateApp(appId string) (evt event.Event, err error) {
+func (self *App) CreateApp(appId string) (evt event.Event, err error) {
 	err = self.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(appsBucketName))
 		evt, err = createApp(b, appId)
@@ -36,7 +36,7 @@ func (self *Aggregate) CreateApp(appId string) (evt event.Event, err error) {
 	return
 }
 
-func (self *Aggregate) OnCreatedApp(evt event.Event) error {
+func (self *App) OnCreatedApp(evt event.Event) error {
 	return self.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(appsBucketName))
 		return onCreatedAppEvent(b, evt)
@@ -61,7 +61,7 @@ func onCreatedAppEvent(b *bolt.Bucket, evt event.Event) error {
 	return b.Put([]byte(appId), []byte{1})
 }
 
-func (self *Aggregate) RemoveApp(appId string) (evt event.Event, err error) {
+func (self *App) RemoveApp(appId string) (evt event.Event, err error) {
 	err = self.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(appsBucketName))
 		evt, err = removeApp(b, appId)
@@ -73,7 +73,7 @@ func (self *Aggregate) RemoveApp(appId string) (evt event.Event, err error) {
 	return
 }
 
-func (self *Aggregate) OnRemovedApp(evt event.Event) error {
+func (self *App) OnRemovedApp(evt event.Event) error {
 	return self.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(appsBucketName))
 		return onRemovedAppEvent(b, evt)
@@ -97,7 +97,7 @@ func onRemovedAppEvent(b *bolt.Bucket, evt event.Event) error {
 	appId := evt.Data().(string)
 	return b.Delete([]byte(appId))
 }
-func (self *Aggregate) ExistsApp(appId string) (exists bool, err error) {
+func (self *App) ExistsApp(appId string) (exists bool, err error) {
 	err = self.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(appsBucketName))
 		exists = existsApp(b, appId)

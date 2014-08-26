@@ -12,7 +12,7 @@ func TestCreate(t *testing.T) {
 	db := openBoltDB()
 	defer closeBoltDB(db)
 
-	agg := app.NewAggregate(db)
+	agg := app.NewApp(db)
 
 	exists1, err := agg.ExistsApp("app1")
 	assert.Nil(t, err)
@@ -44,7 +44,7 @@ func TestRemove(t *testing.T) {
 	db := openBoltDB()
 	defer closeBoltDB(db)
 
-	agg := app.NewAggregate(db)
+	agg := app.NewApp(db)
 
 	_, err := agg.RemoveApp("app1")
 	assert.NotNil(t, err)
@@ -68,7 +68,7 @@ func TestProcessEvents(t *testing.T) {
 	db := openBoltDB()
 	defer closeBoltDB(db)
 
-	agg := app.NewAggregate(db)
+	agg := app.NewApp(db)
 
 	exists1, err := agg.ExistsApp("app1")
 	assert.Nil(t, err)
@@ -103,7 +103,7 @@ func TestMix(t *testing.T) {
 	db := openBoltDB()
 	defer closeBoltDB(db)
 
-	agg := app.NewAggregate(db)
+	agg := app.NewApp(db)
 
 	exists1, err := agg.ExistsApp("app1")
 	assert.Nil(t, err)
