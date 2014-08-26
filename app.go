@@ -16,14 +16,6 @@ type Aggregate struct {
 	db *bolt.DB
 }
 
-func NewCreatedAppEvent(appId string) event.Event {
-	return event.NewEvent(CreatedAppEvent, 1, appId)
-}
-
-func NewRemovedAppEvent(appId string) event.Event {
-	return event.NewEvent(RemovedAppEvent, 1, appId)
-}
-
 func NewAggregate(db *bolt.DB) *Aggregate {
 	db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte(appsBucketName))
@@ -60,6 +52,10 @@ func createApp(b *bolt.Bucket, appId string) (evt event.Event, err error) {
 	return
 }
 
+func NewCreatedAppEvent(appId string) event.Event {
+	return event.NewEvent(CreatedAppEvent, 1, appId)
+}
+
 func onCreatedAppEvent(b *bolt.Bucket, evt event.Event) error {
 	appId := evt.Data().(string)
 	return b.Put([]byte(appId), []byte{1})
@@ -91,6 +87,10 @@ func removeApp(b *bolt.Bucket, appId string) (evt event.Event, err error) {
 	}
 	evt = NewRemovedAppEvent(appId)
 	return
+}
+
+func NewRemovedAppEvent(appId string) event.Event {
+	return event.NewEvent(RemovedAppEvent, 1, appId)
 }
 
 func onRemovedAppEvent(b *bolt.Bucket, evt event.Event) error {
