@@ -148,6 +148,6 @@ func openBoltDB() *bolt.DB {
 }
 
 func closeBoltDB(db *bolt.DB) {
+	defer os.Remove(db.Path())
 	db.Close()
-	os.Remove("test.db")
 }
